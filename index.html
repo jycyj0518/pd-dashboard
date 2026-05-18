@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PD Market Report Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f3ee;
+    --bg2: #ffffff;
+    --bg3: #ede9e2;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.15);
+    --text: #1a1916;
+    --text2: #5a5850;
+    --text3: #a09d96;
+    --accent: #8a6f2e;
+    --accent2: #b8972e;
+    --blue: #2568b8;
+    --teal: #1a8a5a;
+    --coral: #b84a28;
+    --purple: #6b4db8;
+    --red: #b83030;
+    --green: #2a7a2a;
+    --amber: #b87820;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Header */
+  header {
+    border-bottom: 0.5px solid var(--border);
+    padding: 0 2.5rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(245,243,238,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .logo span { color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 300; margin-left: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .last-updated { font-size: 11px; color: var(--text3); letter-spacing: 0.05em; }
+
+  /* Layout */
+  main { max-width: 1280px; margin: 0 auto; padding: 2rem 2.5rem 4rem; }
+
+  /* Metric cards */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 2rem;
+  }
+  .metric {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease both;
+  }
+  .metric::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0.7;
+  }
+  .metric:nth-child(2)::before { background: var(--blue); }
+  .metric:nth-child(3)::before { background: var(--teal); }
+  .metric:nth-child(4)::before { background: var(--coral); }
+  .metric-label { font-size: 11px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .metric-val { font-size: 28px; font-weight: 300; color: var(--text); letter-spacing: -0.02em; }
+  .metric-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+  /* Two-col grid */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+
+  /* Cards */
+  .card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    animation: fadeUp 0.5s ease both;
+  }
+  .card-title {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 1.25rem;
+    font-weight: 500;
+  }
+
+  /* Bar chart */
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-name { font-size: 12px; color: var(--text2); width: 68px; text-align: right; }
+  .bar-track { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .bar-n { font-size: 11px; color: var(--text3); width: 18px; text-align: right; }
+
+  /* Signal boxes */
+  .signal { border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+  .signal:last-child { margin-bottom: 0; }
+  .signal-label { font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 5px; }
+  .signal-text { font-size: 12px; color: var(--text2); line-height: 1.65; }
+  .sig-red    { background: rgba(184,48,48,0.07);  border-left: 2px solid var(--red); }
+  .sig-amber  { background: rgba(184,120,32,0.08); border-left: 2px solid var(--amber); }
+  .sig-green  { background: rgba(42,122,42,0.07);  border-left: 2px solid var(--green); }
+  .sig-red .signal-label   { color: #b83030; }
+  .sig-amber .signal-label { color: #8a5a10; }
+  .sig-green .signal-label { color: #2a7a2a; }
+
+  /* Tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 1.25rem; }
+  .tag {
+    font-size: 10px; padding: 3px 10px; border-radius: 99px;
+    border: 0.5px solid; letter-spacing: 0.04em;
+  }
+  .tag-blue   { border-color: rgba(37,104,184,0.3);  color: #1a5098; background: rgba(37,104,184,0.07); }
+  .tag-teal   { border-color: rgba(26,138,90,0.3);   color: #0f6040; background: rgba(26,138,90,0.07); }
+  .tag-purple { border-color: rgba(107,77,184,0.3);  color: #4a2e9a; background: rgba(107,77,184,0.07); }
+  .tag-coral  { border-color: rgba(184,74,40,0.3);   color: #8a2e10; background: rgba(184,74,40,0.07); }
+  .tag-amber  { border-color: rgba(184,120,32,0.3);  color: #7a5010; background: rgba(184,120,32,0.07); }
+
+  /* Report table */
+  .report-section { animation: fadeUp 0.6s ease both; }
+  .filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .filt {
+    font-size: 11px; padding: 5px 14px; border-radius: 99px; cursor: pointer;
+    border: 0.5px solid var(--border2); background: transparent; color: var(--text2);
+    transition: all 0.15s ease; letter-spacing: 0.03em;
+  }
+  .filt:hover { border-color: var(--accent2); color: var(--text); }
+  .filt.active { background: var(--accent); border-color: var(--accent); color: #ffffff; font-weight: 500; }
+
+  .report-list { display: flex; flex-direction: column; gap: 0; }
+  .report-item {
+    padding: 16px 0;
+    border-bottom: 0.5px solid var(--border);
+    display: grid;
+    grid-template-columns: 90px 100px 1fr;
+    gap: 16px;
+    align-items: start;
+    transition: background 0.15s;
+  }
+  .report-item:last-child { border-bottom: none; }
+  .report-item:hover { background: rgba(255,255,255,0.02); border-radius: 8px; padding-left: 8px; margin-left: -8px; padding-right: 8px; }
+  .report-date { font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; padding-top: 2px; }
+  .source-badge {
+    font-size: 10px; padding: 3px 9px; border-radius: 99px; font-weight: 500;
+    letter-spacing: 0.04em; display: inline-block; white-space: nowrap;
+  }
+  .src-golub  { background: rgba(37,104,184,0.1);  color: #1a5098; border: 0.5px solid rgba(37,104,184,0.25); }
+  .src-adams  { background: rgba(26,138,90,0.1);   color: #0f6040; border: 0.5px solid rgba(26,138,90,0.25); }
+  .src-preqin { background: rgba(107,77,184,0.1);  color: #4a2e9a; border: 0.5px solid rgba(107,77,184,0.25); }
+  .src-cifc   { background: rgba(184,74,40,0.1);   color: #8a2e10; border: 0.5px solid rgba(184,74,40,0.25); }
+  .report-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 6px; line-height: 1.4; }
+  .report-bullets { font-size: 11px; color: var(--text2); line-height: 1.75; }
+  .bullet-dot { color: var(--accent2); margin-right: 5px; }
+  .new-badge {
+    display: inline-block; font-size: 9px; padding: 1px 6px; border-radius: 99px;
+    background: rgba(42,122,42,0.12); color: #2a7a2a; border: 0.5px solid rgba(42,122,42,0.3);
+    margin-left: 6px; vertical-align: middle; letter-spacing: 0.06em; font-weight: 500;
+  }
+
+  /* Section header */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+  .section-h { font-family: 'DM Serif Display', serif; font-size: 16px; color: var(--text); }
+  .report-count { font-size: 11px; color: var(--text3); }
+
+  /* Animation */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .metric { animation-delay: calc(var(--i, 0) * 0.07s); }
+
+  /* Divider */
+  .divider { height: 0.5px; background: var(--border); margin: 2rem 0; }
+
+  /* Footer */
+  footer { text-align: center; padding: 2rem; font-size: 11px; color: var(--text3); border-top: 0.5px solid var(--border); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PD Market Intelligence <span>Dashboard</span></div>
+  <div class="last-updated">Last updated: 2026.05.15</div>
+</header>
+
+<main>
+
+  <!-- Metrics -->
+  <div class="metrics">
+    <div class="metric" style="--i:0">
+      <div class="metric-label">총 리포트 수</div>
+      <div class="metric-val">11</div>
+      <div class="metric-sub">이번 주 +1 추가</div>
+    </div>
+    <div class="metric" style="--i:1">
+      <div class="metric-label">발간 주체</div>
+      <div class="metric-val">4</div>
+      <div class="metric-sub">Golub · Preqin · Adams · CIFC</div>
+    </div>
+    <div class="metric" style="--i:2">
+      <div class="metric-label">최신 리포트</div>
+      <div class="metric-val" style="font-size:20px;padding-top:4px;">2026.05.15</div>
+      <div class="metric-sub">CIFC Loan/CLO Recap</div>
+    </div>
+    <div class="metric" style="--i:3">
+      <div class="metric-label">커버 자산군</div>
+      <div class="metric-val" style="font-size:20px;padding-top:4px;">4</div>
+      <div class="metric-sub">PC · BDC · BSL · CLO</div>
+    </div>
+  </div>
+
+  <!-- Charts + Signals -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">발간 주체별 리포트 수</div>
+      <div class="bar-row">
+        <div class="bar-name">Golub</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--blue);"></div></div>
+        <div class="bar-n">5</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-name">Preqin</div>
+        <div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--purple);"></div></div>
+        <div class="bar-n">4</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-name">Adams St.</div>
+        <div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--teal);"></div></div>
+        <div class="bar-n">2</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-name" style="color:var(--coral);">CIFC ✦</div>
+        <div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--coral);"></div></div>
+        <div class="bar-n" style="color:var(--coral);">1</div>
+      </div>
+      <div class="tags">
+        <span class="tag tag-blue">Private Credit</span>
+        <span class="tag tag-teal">BDC / Interval</span>
+        <span class="tag tag-purple">PIK / Maturity</span>
+        <span class="tag tag-coral">Loan / CLO</span>
+        <span class="tag tag-amber">Manager Selection</span>
+        <span class="tag tag-blue">Software Sector</span>
+        <span class="tag tag-purple">Non-accrual</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">시장 신호 요약</div>
+      <div class="signal sig-red">
+        <div class="signal-label">위험 신호</div>
+        <div class="signal-text">BDC 환매 NAV 대비 ~15% 급증 · Software 대출 1Q 중 7pt 하락 · 크레딧 스프레드 +58bp · Non-IG Tech 디폴트 전망 2.6%(Apr '26)</div>
+      </div>
+      <div class="signal sig-amber">
+        <div class="signal-label">모니터링</div>
+        <div class="signal-text">10Y UST 4.593%(+23.9bp) · VIX 18.4 · CLO BB 가격 92.84 · Single-B 스프레드 +325bps · Moody's 등급 하향 비율 1.30%</div>
+      </div>
+      <div class="signal sig-green">
+        <div class="signal-label">기회 요인</div>
+        <div class="signal-text">론 시장 HY 대비 +1.1% 수익률 프리미엄 · CLO AAA +119bps(전후 최저) · Software 섹터 주간 +0.22% 반등 · YTD CLO AAA +1.82%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report List -->
+  <div class="report-section card">
+    <div class="section-header">
+      <div class="section-h">리포트 목록</div>
+      <div class="report-count" id="count-label">11개 리포트</div>
+    </div>
+    <div class="filter-bar">
+      <button class="filt active" onclick="filter('all',this)">전체 (11)</button>
+      <button class="filt" onclick="filter('Golub',this)">Golub (5)</button>
+      <button class="filt" onclick="filter('Preqin',this)">Preqin (4)</button>
+      <button class="filt" onclick="filter('Adams Street',this)">Adams Street (2)</button>
+      <button class="filt" onclick="filter('CIFC Asset Management',this)">CIFC (1)</button>
+    </div>
+    <div class="report-list" id="report-list"></div>
+  </div>
+
+</main>
+
+<footer>PD Market Intelligence Dashboard · 내부 참고용 · 자료 출처: 각 발간 주체 원문 리포트</footer>
+
+<script>
+const reports = [
+  { date:'2026-05-15', source:'CIFC Asset Management', isNew:true,
+    title:'Recap of U.S. Loan/CLO Markets (2026.05.15)',
+    bullets:[
+      '[Bank Loan] 론 시장 보합세이나 HY/IG 대비 아웃퍼폼(LSTA LLI +0.09% vs. BofA HY -0.50%, IG Corp -0.99%)',
+      '[Bank Loan] 주간 신규 발행 $35.7B(31건), 약 2/3가 리프라이싱($15B)·리파이낸싱($8.3B)',
+      '[Bank Loan] BB 스프레드 +203.3bps로 연초 수준 회귀. 단일 B는 +325bps(약 30bps 더 넓음)',
+      '[Bank Loan] 소프트웨어 섹터 가격 상승 지속. JPM LLI Technology 주간 +0.22% 아웃퍼폼',
+      '[Bank Loan] 론 수익률이 올해 처음으로 HY 추월, 단기 HY 대비 ~1.1% 프리미엄 전망(BofA)',
+      '[CLO] 주간 신규 발행 10건·$4.6B 반등(직전 주 0건). OakHill $440M: AAA +119bps(전후 최저), BB +500bps',
+      '[CLO] CLO AAA 신규 발행 스프레드 타이트닝 기조. 다음 주 Tier 1 운용사 AAA +118bps 예정',
+      '[CLO] Moody\'s: Q1\'26 등급 하향 비율 1.30%(전분기 1.04%). 등급 상향 4.37%로 유지',
+      '[시장 지표] 10Y UST 4.593%(+23.9bp), VIX 18.4. YTD LSTA 론 +1.09%, CLO AAA +1.82%, CLO BB +1.58%'
+    ]
+  },
+  { date:'2026-05-14', source:'Golub',
+    title:"GOLUB CAPITAL INSIGHTS: LOAN MARKET UPDATE, '26.1Q",
+    bullets:[
+      '기준금리 하락(2년간 약 170bp)으로 변동금리 수익률 감소',
+      '크레딧 스프레드 +58bp 확대로 공모·사모 대출 전반 평가손 발생',
+      'BDC 평균 Net Return: 2023년 10% → 2024년 9% → 2025년 4%로 하락',
+      'Software 대출 1Q 중 약 7pt 하락 vs. 비소프트웨어 약 1pt 하락',
+      'Non-traded BDC 환매 요청 NAV 대비 ~15%(quarterly gate 5% 초과)',
+      '어려운 시장 환경일수록 resilient manager 중심으로 시장 재편 가능성'
+    ]
+  },
+  { date:'2026-04-20', source:'Adams Street',
+    title:'BDC 및 Interval Fund 운용사, 안심보다 투명성으로 환매압력 완화 가능',
+    bullets:[
+      '환매 증가 원인은 운용사 역량 차이 및 제한적 공시에 따른 불확실성',
+      'Non-accrual 비율, PIK 비중, 고LTV·고레버리지 익스포저, 섹터 집중도 공시 강화 필요',
+      'BDC·Interval Fund는 견조한 장기 투자수단이나 운용사 선정이 핵심'
+    ]
+  },
+  { date:'2026-04-06', source:'Adams Street',
+    title:'점검에 들어간 Private Credit: 잡음 속 핵심 신호 읽기',
+    bullets:[
+      'First Brands, Tricolor, MFS 사례는 시스템 리스크가 아닌 구조적 문제로 평가',
+      'AI 영향으로 소프트웨어 섹터 조정 중이나 경쟁력 있는 SaaS는 수혜 가능',
+      'Core middle market: 보수적 구조와 매력적 수익률 유지. 운용사 간 성과 차별화 확대 전망'
+    ]
+  },
+  { date:'2026-05-01', source:'Golub', title:'A Short History of Sponsor Finance',
+    bullets:[
+      '규제 강화로 전통 은행이 중견기업 대출에서 퇴출, 비은행권 기회 확대',
+      '사모 대출 관리자가 PE의 핵심 파트너로 부상',
+      '은행은 credit facility 제공 보조 역할로 전환'
+    ]
+  },
+  { date:'2026-05-01', source:'Golub', title:'Crowded Market in Private Credit?',
+    bullets:[
+      '시장 포화는 EBITDA $100M 이상 대형 차입자 시장에 집중',
+      '대형 운용사들이 대형 딜 몰리며 공모 시장과 경계 모호화',
+      'Core Middle Market(EBITDA $20M~$100M)은 기존 특성 유지 중'
+    ]
+  },
+  { date:'2026-05-01', source:'Golub', title:'Rethinking the Size Debate',
+    bullets:[
+      '차입자 규모는 위험·수익의 절대적 지표가 아님',
+      '대형(안정·저수익) vs. 소형(고수익·리스크) 장단점 뚜렷',
+      '전 범위를 유연하게 공략하며 우량 기업 선별 역량이 핵심'
+    ]
+  },
+  { date:'2026-05-01', source:'Preqin', title:'Trending Data: How stable are PIK loans in private credit',
+    bullets:[
+      'BDC 포트폴리오 내 PIK 비중 2018년 이후 7~10% 안정적 유지',
+      'PIK는 조기 디폴트보다 만기까지 시간 확보 수단으로 활용',
+      'IT·헬스케어 섹터 중심 손상 리스크 모니터링 필요'
+    ]
+  },
+  { date:'2026-05-01', source:'Preqin', title:'Research Note: Mapping software exposure across BDC portfolios',
+    bullets:[
+      'BDC IT/소프트웨어 익스포저: 전체 자산의 약 20%($93bn), 최대 단일 섹터',
+      'Tech 대출의 PIK 비중·스프레드는 전체 대비 유의미한 악화 조짐 제한적',
+      'Club deal 구조 확대로 개별 크레딧 이벤트 발생 시 포트폴리오 영향 확대 가능성'
+    ]
+  },
+  { date:'2026-05-01', source:'Preqin', title:'Trending Data: Is private credit facing a maturity wall',
+    bullets:[
+      'BDC 대출 만기는 급격한 집중보다 점진적 증가(ramp-up) 형태',
+      '만기 집중 시점은 주로 2029~2032년, refinancing까지 충분한 시간',
+      '만기 분산 구조로 차주 간 refinancing 경쟁 압력도 완화 가능'
+    ]
+  },
+  { date:'2026-05-01', source:'Preqin', title:'Trending Data: How concentrated is BDC lending',
+    bullets:[
+      '전체 포트폴리오 집중도(Gini coefficient) 50%→54%로 상승',
+      'Non-accrual 비율 2022년 0.7% → 2025년 1.2%로 소폭 상승',
+      'AI 관련 우려로 향후 운용사 간 성과 차별화 확대 가능성'
+    ]
+  },
+];
+
+function srcClass(src) {
+  if (src==='Golub') return 'src-golub';
+  if (src==='Adams Street') return 'src-adams';
+  if (src==='CIFC Asset Management') return 'src-cifc';
+  return 'src-preqin';
+}
+function srcLabel(src) {
+  if (src==='CIFC Asset Management') return 'CIFC';
+  if (src==='Adams Street') return 'Adams St.';
+  return src;
+}
+
+function render(data) {
+  document.getElementById('count-label').textContent = data.length + '개 리포트';
+  document.getElementById('report-list').innerHTML = data.map(r => `
+    <div class="report-item">
+      <div class="report-date">${r.date}</div>
+      <div><span class="source-badge ${srcClass(r.source)}">${srcLabel(r.source)}</span></div>
+      <div>
+        <div class="report-title">${r.title}${r.isNew ? '<span class="new-badge">NEW</span>' : ''}</div>
+        <div class="report-bullets">${r.bullets.map(b=>`<span class="bullet-dot">·</span>${b}<br>`).join('')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filter(src, btn) {
+  document.querySelectorAll('.filt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render(src==='all' ? reports : reports.filter(r => r.source===src));
+}
+
+render(reports);
+</script>
+</body>
+</html>
